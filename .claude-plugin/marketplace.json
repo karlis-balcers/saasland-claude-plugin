@@ -1,0 +1,25 @@
+{
+  "name": "saasland",
+  "owner": {
+    "name": "SIA \"DryBits\"",
+    "email": "contact@saasland.io",
+    "url": "https://saasland.io"
+  },
+  "description": "saasland.io plugins for Claude Code.",
+  "plugins": [
+    {
+      "name": "saasland",
+      "displayName": "saasland.io",
+      "source": "./",
+      "description": "Manage saasland.io apps and deployments through the saasland.io MCP server with OAuth.",
+      "version": "2.0.0",
+      "category": "development",
+      "tags": [
+        "saasland",
+        "hosting",
+        "deployment",
+        "mcp"
+      ]
+    }
+  ]
+}

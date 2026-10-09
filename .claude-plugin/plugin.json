@@ -1,0 +1,21 @@
+{
+  "name": "saasland",
+  "displayName": "saasland.io",
+  "version": "2.0.0",
+  "description": "Prepare saasland.io app versions, write-only environment variables, PostgreSQL, firewall and storage settings through MCP; review and publish changes in the portal.",
+  "author": {
+    "name": "SIA \"DryBits\"",
+    "email": "contact@saasland.io",
+    "url": "https://saasland.io"
+  },
+  "homepage": "https://saasland.io/developers",
+  "repository": "https://github.com/karlis-balcers/saasland-claude-plugin",
+  "keywords": [
+    "saasland",
+    "apps",
+    "hosting",
+    "deployment",
+    "logs",
+    "mcp"
+  ]
+}

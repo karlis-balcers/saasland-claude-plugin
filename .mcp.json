@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "saasland": {
+      "type": "http",
+      "url": "https://saasland.io/mcp"
+    }
+  }
+}
