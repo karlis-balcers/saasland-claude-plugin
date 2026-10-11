@@ -12,7 +12,7 @@
       "displayName": "saasland.io",
       "source": "./",
       "description": "Manage saasland.io apps and deployments through the saasland.io MCP server with OAuth.",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "category": "development",
       "tags": [
         "saasland",
