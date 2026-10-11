@@ -35,11 +35,13 @@ Every visible credit price, balance, limit, payment button and refund amount use
 
 The plugin and skills-only package include these approved assets next to this skill. Copy the chosen file into the app's own static assets and include it in the source ZIP; do not depend on the platform repository or a runtime hotlink:
 
-| Variant | SVG | Transparent 512px PNG |
+| Variant | SVG (bundled) | Transparent 512px PNG (download) |
 | --- | --- | --- |
-| Color | [credits-coin.svg](assets/credits-coin.svg) | [credits-coin.png](assets/credits-coin.png) |
-| Black | [credits-coin-black.svg](assets/credits-coin-black.svg) | [credits-coin-black.png](assets/credits-coin-black.png) |
-| White | [credits-coin-white.svg](assets/credits-coin-white.svg) | [credits-coin-white.png](assets/credits-coin-white.png) |
+| Color | [credits-coin.svg](assets/credits-coin.svg) | [credits-coin.png](https://saasland.io/assets/credits-coin.png) |
+| Black | [credits-coin-black.svg](assets/credits-coin-black.svg) | [credits-coin-black.png](https://saasland.io/assets/credits-coin-black.png) |
+| White | [credits-coin-white.svg](assets/credits-coin-white.svg) | [credits-coin-white.png](https://saasland.io/assets/credits-coin-white.png) |
+
+Prefer the bundled SVG. If an app needs a PNG, download it from the link above once and bundle the file in the app.
 
 When using only the downloaded public SKILL.md without its sibling assets folder, download the chosen filename from `https://saasland.io/assets/` (for example [color SVG](https://saasland.io/assets/credits-coin.svg)), then bundle it locally. Preserve the supplied geometry, aspect ratio, transparency and SVG masks. Render at least 20px square beside compact amounts; larger balances may scale the icon with the number. Use white artwork on dark/saturated buttons, black on light surfaces, or the color artwork where it has enough contrast.
 
