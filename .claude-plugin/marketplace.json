@@ -11,8 +11,8 @@
       "name": "saasland",
       "displayName": "saasland.io",
       "source": "./",
-      "description": "Manage saasland.io apps and deployments through the saasland.io MCP server with OAuth.",
-      "version": "2.0.1",
+      "description": "Prepare all saasland.io app setup and configuration through MCP, including artwork; the owner reviews drafts and presses Publish.",
+      "version": "3.0.0",
       "category": "development",
       "tags": [
         "saasland",

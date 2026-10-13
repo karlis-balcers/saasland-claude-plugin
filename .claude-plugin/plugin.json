@@ -1,8 +1,8 @@
 {
   "name": "saasland",
   "displayName": "saasland.io",
-  "version": "2.0.1",
-  "description": "Prepare saasland.io app versions, write-only environment variables, PostgreSQL, firewall and storage settings through MCP; review and publish changes in the portal.",
+  "version": "3.0.0",
+  "description": "Prepare all saasland.io app setup and configuration through MCP, including artwork; the owner reviews drafts and presses Publish.",
   "author": {
     "name": "SIA \"DryBits\"",
     "email": "contact@saasland.io",
