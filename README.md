@@ -1,6 +1,6 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.1.0** uses the SaaSland SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`). Update the platform first; this package cannot be used to maintain the old SDK contract.
+Version **3.1.1** targets the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`). Apps built on the older SDK need a source update and redeploy.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
@@ -45,6 +45,10 @@ Uploads are not counted per day; publishing that builds or restarts an app is li
 ## AppSync Events
 
 Read `get_app_configuration` for current/draft `realtimeEnabled` and the active `realtime` service status. Use `set_app_configuration({ slug, revision, changes: { realtimeEnabled: true } })` to prepare opt-in, or `false` to prepare removal. Both wait for your Publish review. After publishing, check that `realtime.enabled` is true and `realtime.status` is `ready`. Each app has an isolated service and attributed usage joins its daily hosting charges. The development skill covers the required backend channel-authorization callback and browser SDK.
+
+## Install in Claude (desktop, web and Cowork)
+
+Install **saasland.io** from **Customize → Plugins**. Installing does not sign you in: open the plugin's **Connectors** tab, click **Connect** on saasland and approve the connection on saasland.io. If Claude shows an "Add custom connector" dialog instead, keep the URL `https://saasland.io/mcp`, leave the OAuth Client ID and Client Secret fields empty, click **Add**, then **Connect**.
 
 ## Install in Claude Code
 
