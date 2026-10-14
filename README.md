@@ -1,11 +1,11 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.0.0** uses the SaaSland SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`). Update the platform first; this package cannot be used to maintain the old SDK contract.
+Version **3.1.0** uses the SaaSland SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`). Update the platform first; this package cannot be used to maintain the old SDK contract.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
-- **saasland-apps** - list your apps, inspect status, deployments and logs, upload new source, create private app drafts, and prepare every app configuration section: details, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
-- **saasland-app-development** - build ordinary HTTP SaaS apps that run on saasland.io with the browser SDK: sign-in, app storage and files, profile and age checks, credit payments and subscriptions, online presence, languages, appearance and platform navigation.
+- **saasland-apps** - list your apps, inspect status, deployments and logs, upload new source, create private app drafts, and prepare every app configuration section: details, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, optional AppSync Events, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
+- **saasland-app-development** - build ordinary HTTP SaaS apps that run on saasland.io with the browser SDK: sign-in, app storage and files, profile and age checks, credit payments and subscriptions, online presence, AppSync Events, languages, appearance and platform navigation.
 
 Every change is saved as a draft and waits for you to review it and press **Publish** in the saasland.io portal. The plugin cannot publish apps, accept agreements, read stored secret values, move credits or administer AWS.
 
@@ -13,8 +13,8 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 
 | Tool | Permission | What it does |
 | --- | --- | --- |
-| `get_app_configuration` | apps:read | Active and draft setup, shared revision and artwork pointers |
-| `set_app_configuration` | apps:write | Draft details, policies, optional content self-check, access, categories, address and runtime |
+| `get_app_configuration` | apps:read | Active and draft setup, AppSync Events service status, shared revision and artwork pointers |
+| `set_app_configuration` | apps:write | Draft details, policies, optional content self-check, access, categories, address, runtime and AppSync Events opt-in |
 | `get_app_publication_review` | apps:read | Remaining blockers and saved changes for human Publish review |
 | `check_app_address` | apps:read | Check current address availability |
 | `get_app_artwork` | apps:read | Preview the owned draft or active artwork |
@@ -42,6 +42,10 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 
 Uploads are not counted per day; publishing that builds or restarts an app is limited to 10 per developer per UTC day. Database usage joins the daily hosting charges with no separate approval.
 
+## AppSync Events
+
+Read `get_app_configuration` for current/draft `realtimeEnabled` and the active `realtime` service status. Use `set_app_configuration({ slug, revision, changes: { realtimeEnabled: true } })` to prepare opt-in, or `false` to prepare removal. Both wait for your Publish review. After publishing, check that `realtime.enabled` is true and `realtime.status` is `ready`. Each app has an isolated service and attributed usage joins its daily hosting charges. The development skill covers the required backend channel-authorization callback and browser SDK.
+
 ## Install in Claude Code
 
 ```
@@ -65,6 +69,6 @@ saasland.io asks you to approve the connection and pick its permissions (`apps:r
 
 ## Support
 
-contact@saasland.io - https://saasland.io/about
+contact@drybits.com - https://saasland.io/about
 
 Published by SIA "DryBits", Latvia.

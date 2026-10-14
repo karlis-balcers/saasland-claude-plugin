@@ -5,12 +5,12 @@ description: Create ordinary HTTP SaaS apps for saasland.io ZIP or folder deploy
 
 ## SaaSland contract version 3
 
-Use `import { saasland } from "/_saasland/sdk.js"` and `X-Saasland-*` trusted headers. This contract is intentionally breaking; previous SDK names, routes, cookies and message names have no aliases. The version 3 package is prepared locally; adopt it together with the corresponding platform deployment. Existing apps need source updates and redeployment.
+Use `import { saasland } from "/_saasland/sdk.js"` and `X-Saasland-*` trusted headers. This contract is intentionally breaking; previous SDK names, routes, cookies and message names have no aliases. Use this package with the deployed SaaSland platform; an installed client may need a new session to load updated tools and skills. Existing apps need source updates and redeployment.
 
 
 # Build an app for saasland.io
 
-Contract revision: 2026-10-12. Read the public [developer documentation](https://saasland.io/developers) without signing in. Check current MCP tool schemas and portal feature availability. Do not claim deployment until get_app_status or the portal reports Ready.
+Contract revision: 2026-10-14. Read the public [developer documentation](https://saasland.io/developers) without signing in. Check current MCP tool schemas and portal feature availability. Do not claim deployment until get_app_status or the portal reports Ready.
 
 ## Default approach: call the resource directly
 
@@ -46,13 +46,14 @@ Import `{ saasland }` from `/_saasland/sdk.js` on authenticated pages only. Ever
 | Prepaid subscriptions | `wallet.subscribe`, `wallet.subscription` |
 | Explicit permission requests | `permissions.request`, `permissions.status` (advanced only) |
 | Online presence | `presence.start` → `stop`, `presence.get(userIds)` |
+| Optional live events | `realtime.subscribe(channel, { onEvent, onError, onStatus })` → `{ stop }`, `realtime.publish(channel, event, { id })` |
 | Language and appearance | `preferences.get`, `preferences.subscribe` |
 | Platform menu | `navigation.register` |
 | Visitor cookie choices | `storageConsent.get`, `storageConsent.subscribe` |
 
 Developers manage apps through the saasland.io MCP tools (`list_apps`, `create_app`, `create_source_upload`, `deploy_source`, `redeploy_app`, environment, firewall, database and browser-storage tools, deployments, activity and logs) or the portal. Publication is portal-only.
 
-Local HTTP tests do not provide platform sign-in, SDK endpoints or real payment approval. Use clearly labeled test doubles locally and verify the actual integration in a private deployed app. Unsupported app APIs include scheduled jobs, WebSockets, unrestricted container internet access, custom domains, GitHub imports, camera/microphone, and payout operations. The separate developer workspace supports reviewed manual payout preparation; it does not send money. saasland.io does not age-gate visits: public paths are open to everyone, the app decides who sees its signed-in pages, and the platform checks the `minimumAge` you attach to paid features (see [Age limits](#age-limits)). Birthday and age disclosure do not verify age.
+Local HTTP tests do not provide platform sign-in, SDK endpoints or real payment approval. Use clearly labeled test doubles locally and verify the actual integration in a private deployed app. Unsupported app APIs include scheduled jobs, App-hosted WebSocket servers, unrestricted container internet access, custom domains, GitHub imports, camera/microphone, and payout operations. The separate developer workspace supports reviewed manual payout preparation; it does not send money. saasland.io does not age-gate visits: public paths are open to everyone, the app decides who sees its signed-in pages, and the platform checks the `minimumAge` you attach to paid features (see [Age limits](#age-limits)). Birthday and age disclosure do not verify age.
 
 ## Credit prices and the approved coin
 
@@ -60,13 +61,11 @@ Every visible credit price, balance, limit, payment button and refund amount use
 
 The plugin and skills-only package include these approved assets next to this skill. Copy the chosen file into the app's own static assets and include it in the source ZIP; do not depend on the platform repository or a runtime hotlink:
 
-| Variant | SVG (bundled) | Transparent 512px PNG (download) |
+| Variant | SVG | Transparent 512px PNG |
 | --- | --- | --- |
-| Color | [credits-coin.svg](assets/credits-coin.svg) | [credits-coin.png](https://saasland.io/assets/credits-coin.png) |
-| Black | [credits-coin-black.svg](assets/credits-coin-black.svg) | [credits-coin-black.png](https://saasland.io/assets/credits-coin-black.png) |
-| White | [credits-coin-white.svg](assets/credits-coin-white.svg) | [credits-coin-white.png](https://saasland.io/assets/credits-coin-white.png) |
-
-Prefer the bundled SVG. If an app needs a PNG, download it from the link above once and bundle the file in the app.
+| Color | [credits-coin.svg](assets/credits-coin.svg) | [credits-coin.png](assets/credits-coin.png) |
+| Black | [credits-coin-black.svg](assets/credits-coin-black.svg) | [credits-coin-black.png](assets/credits-coin-black.png) |
+| White | [credits-coin-white.svg](assets/credits-coin-white.svg) | [credits-coin-white.png](assets/credits-coin-white.png) |
 
 When using only the downloaded public SKILL.md without its sibling assets folder, download the chosen filename from `https://saasland.io/assets/` (for example [color SVG](https://saasland.io/assets/credits-coin.svg)), then bundle it locally. Preserve the supplied geometry, aspect ratio, transparency and SVG masks. Render at least 20px square beside compact amounts; larger balances may scale the icon with the number. Use white artwork on dark/saturated buttons, black on light surfaces, or the color artwork where it has enough contrast.
 
@@ -103,7 +102,7 @@ Prefer Node.js 22 or Python 3.13: both example containers have passed build, ima
 - The platform adds Lambda Web Adapter; do not implement a Lambda handler or add another adapter. Serve browser assets from the app's own origin.
 - Treat execution as stateless and restartable. The image filesystem is read-only; `/tmp` is temporary. Use platform storage for durable data. Do not rely on process memory or local files persisting between requests.
 - Request timeout is 1–20 seconds; memory is 256, 512, 1024 or 2048 MB. Defaults: 20 seconds and 512 MB. Ports are 1024–65535 except reserved 3000 and 9001.
-- WebSockets, permanent background workers, scheduled jobs, unrestricted container internet access and direct external database connections are not supported. External HTTPS APIs use ordinary server-side HTTP clients, app-owned API keys in environment variables and owner-configured Outgoing firewall destinations. The HTTP client must honor the supplied HTTPS_PROXY setting; saving an API key alone does not grant network access.
+- App-hosted WebSocket servers, permanent background workers, scheduled jobs, unrestricted container internet access and direct external database connections are not supported. External HTTPS APIs use ordinary server-side HTTP clients, app-owned API keys in environment variables and owner-configured Outgoing firewall destinations. The HTTP client must honor the supplied HTTPS_PROXY setting; saving an API key alone does not grant network access.
 - Install dependencies in the Dockerfile from public sources. Installed dependency folders and virtual environments are excluded from uploads. Private package/build credentials are not supported. Use maintained base images and dependencies; OS image scans must complete with no HIGH or CRITICAL findings. Scanning does not certify all libraries or application behavior.
 
 Minimal Node project:
@@ -142,6 +141,27 @@ Upload new version reuses saved configuration and runtime settings. Omitted keys
 After a successful source deployment, **Your apps → app → Environment variables** lists configured names and supports add, replace and delete without a new source upload. Saved values are write-only in settings/APIs; review shows names and actions only. Values are literal strings, so Secret Manager ARNs, paths and interpolation templates are not resolved. The platform stores an app-specific secret bundle and injects values into the replacement runtime before startup. Save the runtime draft, then review and Publish to apply changes. Server code reads its provider API keys from this environment. Configure **Outgoing firewall** for the corresponding public destinations. The platform reserves proxy variables and injects its standard HTTPS proxy when active. Platform/database variables stay separately managed. Undeployed drafts can save variables for the first deployment without starting a runtime. Check portal availability before offering runtime updates.
 
 With MCP, call `get_app_environment` for names and the shared settings revision, then `set_app_environment` with that `revision`, a UUID `requestId`, and `variables: [{name, value}]` to add or replace authorized literal values. Omitted names remain unchanged; `remove: [name]` removes explicitly selected variables. Reuse the same requestId and arguments on uncertain retries. Reads and save responses never return values. Saving prepares a draft for the owner's Publish review and does not restart the app. Keep values out of source, browser responses, logs and summaries; never add an endpoint or read logs to recover saved secrets. Runtime code can read its own environment, so write-only management does not stop deliberately modified app code from exposing it. If the tools are absent, hand off the portal environment editor.
+
+## Optional AppSync Events
+
+AppSync Events is off by default. In **Your apps → Configuration → AppSync Events**, enable it, save the draft, then review and Publish. MCP can prepare `set_app_configuration({ slug, revision, changes: { realtimeEnabled: true } })`; it cannot publish. The app's dedicated service is provisioned afterward. Usage is included in this app's daily hosting charges when AWS billing arrives. Disable and Publish to remove it. Read `get_app_configuration` for current/draft `realtimeEnabled` and active service `realtime` status. After Publish, use it only when `realtime.enabled` is true and `realtime.status` is `ready`; a saved or published opt-in does not prove provisioning has finished. Status may be `disabled`, `provisioning`, `ready`, `disabling` or `failed`; report a persistent failure and its sanitized `error` to platform support. To cancel an unpublished opt-in/out, save the current flag with the latest revision.
+
+Your server must handle reserved `POST /_saasland/realtime/authorize`. The platform invokes it with trusted `X-Saasland-User-Id` and JSON `{ operation: "subscribe" | "publish", channel, id, userId, event? }`. `userId` is app-scoped `usr_…`. Check room membership on **both** operations. For publication validate and atomically store the authoritative action, deduplicate by `id`, and return HTTP 200 JSON `{ allow: true, event: validatedPublicData }`; subscription approval returns `{ allow: true }`. Any other response denies. Browsers cannot call this reserved callback directly. Never allow a room merely because the caller knows its name. Callback code must not depend on browser cookies; use the trusted subject.
+
+```js
+const live = await saasland.realtime.subscribe('rooms/room-123', {
+  onEvent: ({ id, userId, data }) => applyNotification(id, userId, data),
+  onStatus: ({ status, resync }) => { if (resync) void reloadSavedRoom(); },
+  onError: error => showConnectionError(error.message),
+});
+await saasland.realtime.publish('rooms/room-123', { move: 'e2-e4' }, { id: crypto.randomUUID() });
+// On leaving the room:
+live.stop();
+```
+
+Helper functions above belong to your app. Channel names are exact (no wildcards), 1–120 letters/numbers/dashes/single slashes, start alphanumeric and have no trailing slash. Events are JSON up to 8 KiB; four subscriptions per page and 30 real-time requests per app/user/minute, within normal gateway limits. Renewals also use requests and invoke your server. Access is rechecked at least every 60 seconds while connected; removed room members can receive already-authorized/in-flight notifications until renewal. SDK import alone opens no socket. Tickets live only in memory; no new browser storage declaration is required.
+
+Keep authoritative state in your database or platform storage. Live events have no durable replay, guaranteed ordering or exactly-once promise; reconnect/renewal can miss notifications. Reload state whenever `onStatus` includes `resync: true`, and deduplicate by event ID. Publish has no automatic retry: a delivery error may follow a committed server action. Reconcile saved state by `id` first. Network reconnection is bounded; authorization denial stops the subscription. This is intended for modest chat, turn-based games and shared activity; app-hosted WebSocket servers and high-frequency game loops remain unsupported.
 
 ## Online friends and app presence
 
@@ -196,7 +216,7 @@ There are three distinct identities:
 
 HTTP request bodies may be at most 1 MiB, decoded responses at most 4 MiB. App/account requests cap at 60 per minute, with 600 per minute shared across an app and at most four active invocations per creator across all apps. Handle 429 responses without losing user input. Redirects stay within the app origin and cannot target reserved auth or SDK routes. Service workers, arbitrary embedded frames and objects are unsupported; public pages have the controlled YouTube exception below. Serve scripts from your app origin and use the browser SDK for platform services.
 
-For an admin allowlist, ask the owner to open the app while signed in, then open its saasland.io menu → **Your ID in this app** → **Copy ID**. Store this app-specific `usr_…` ID in server configuration, such as `ADMIN_USER_ID`. On every protected route and operation, require `X-Saasland-Authenticated: true`, a configured admin ID, and an exact match with the trusted `X-Saasland-User-ID`. Deny missing or mismatched identity. Browser-only checks, client-supplied IDs, usernames, email addresses and the platform ID from Settings cannot authorize app admin access. Other apps have different IDs; profile permission is unnecessary for this check.
+For an admin allowlist, ask the owner to open the app while signed in, then open its saasland.io menu → **Profile & settings** → **Your ID in this app** → **Copy ID**. Store this app-specific `usr_…` ID in server configuration, such as `ADMIN_USER_ID`. On every protected route and operation, require `X-Saasland-Authenticated: true`, a configured admin ID, and an exact match with the trusted `X-Saasland-User-ID`. Deny missing or mismatched identity. Browser-only checks, client-supplied IDs, usernames, email addresses and the platform ID from Settings cannot authorize app admin access. Other apps have different IDs; profile permission is unnecessary for this check.
 
 ## Session expiry and unfinished work
 

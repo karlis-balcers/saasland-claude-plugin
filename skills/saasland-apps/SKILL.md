@@ -1,11 +1,11 @@
 ---
 name: saasland-apps
-description: Prepare all saasland.io app setup and configuration through MCP, including source, artwork, details, ratings, policies, access, runtime, environment, database and firewall. Inspect the publication checklist, then hand off only human review and Publish. Use for app configuration, not account administration, operational controls or browser automation.
+description: Prepare all saasland.io app setup and configuration through MCP, including source, artwork, details, ratings, policies, access, runtime, environment, database, AppSync Events and firewall. Inspect the publication checklist, then hand off only human review and Publish. Use for app configuration, not account administration, operational controls or browser automation.
 ---
 
 ## SaaSland contract version 3
 
-Use `import { saasland } from "/_saasland/sdk.js"` and `X-Saasland-*` trusted headers. This contract is intentionally breaking; previous SDK names, routes, cookies and message names have no aliases. The version 3 package is prepared locally; adopt it together with the corresponding platform deployment. Existing apps need source updates and redeployment.
+Use `import { saasland } from "/_saasland/sdk.js"` and `X-Saasland-*` trusted headers. This contract is intentionally breaking; previous SDK names, routes, cookies and message names have no aliases. Use this package with the deployed SaaSland platform; an installed client may need a new session to load updated tools and skills. Existing apps need source updates and redeployment.
 
 
 # Deploy and manage saasland.io apps
@@ -23,6 +23,7 @@ When a saasland.io tool is available, call the tool needed for the user's reques
 | Same image, current settings | `list_deployments` | `redeploy_app` | apps:write |
 | Environment variables | `get_app_environment` | `set_app_environment` | apps:read / apps:write |
 | Outgoing firewall | `get_app_firewall` | `set_app_firewall` | apps:read / apps:write |
+| AppSync Events | `get_app_configuration` | `set_app_configuration` with `changes.realtimeEnabled` | apps:read / apps:write |
 | Managed PostgreSQL | `get_app_database` | `provision_app_database`, `set_app_database` | apps:read / apps:write |
 | Cookies and browser storage | `get_app_browser_storage` | `set_app_browser_storage` | apps:read / apps:write |
 | App setup and configuration | `get_app_configuration`, `get_app_publication_review`, `check_app_address` | `set_app_configuration` | apps:read / apps:write |
@@ -120,6 +121,18 @@ When the user authorizes configuration, call `set_app_environment` (apps:write) 
 Values may come from user-supplied input or a local secret source the user authorized for this app. Never echo them in summaries, logs, command arguments, source ZIPs or durable reports. The tool sends new values to saasland.io; it cannot retrieve old ones. Do not retrieve existing secrets through app logs, source changes, diagnostic endpoints, browser automation, AWS or alternate APIs. App runtime code necessarily receives its own environment, so the write-only management API is not a barrier against app code deliberately exposing it.
 
 On an uncertain response, retry the exact same arguments and requestId; the receipt prevents another save. On a revision conflict, read again and reconcile the requested changes using a new requestId. A names-only read cannot prove that a replacement value was saved. Responses contain names and revision only. Saving prepares a draft without a build or restart; the owner reviews and presses Publish in the portal to activate it. Never claim saved values are active before publication completes. If these tools are unavailable, provide the names and the portal Environment variables link without printing values or automating the form.
+
+## Optional AppSync Events
+
+AppSync Events is off by default. Use it for modest chat, turn-based games and shared activity when the app needs live notifications.
+
+1. Read `get_app_configuration({ slug })`. Compare `current.realtimeEnabled`, `draft.realtimeEnabled` and the active service's `realtime` status.
+2. Enable with `set_app_configuration({ slug, revision, changes: { realtimeEnabled: true } })`, using the latest read's revision. Use `false` to prepare removal. Saving the current value cancels a pending opt-in/out. Preserve other pending changes; on a conflict or uncertain response, read again before saving.
+3. Implement and prepare the server's `POST /_saasland/realtime/authorize` callback and browser SDK calls using the [development skill](../saasland-app-development/SKILL.md#optional-appsync-events). Both subscribe and publish require room-membership checks using the trusted app-scoped user.
+4. Inspect `get_app_publication_review` and hand off human Publish. No MCP tool provisions or removes resources directly, and there is no separate charge checkbox. Each app's attributed usage joins its delayed daily hosting charges.
+5. After the owner publishes, read configuration again. Service use requires `realtime.enabled === true` and `realtime.status === "ready"`. Other statuses are `disabled`, `provisioning`, `disabling` and `failed`. A recently published opt-in may still report disabled before the worker runs. Report the sanitized `realtime.error` when present; a persistent failure needs platform support, not repeated draft writes.
+
+The service is app-isolated; never request AWS keys or another app's channel tickets. MCP management authorization does not grant live-user channel access. Keep durable state and resync on connection; events have no replay or exactly-once guarantee.
 
 ## Prepare database and outgoing firewall
 
