@@ -1,7 +1,7 @@
 {
   "name": "saasland",
   "displayName": "saasland.io",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Prepare all saasland.io app setup and configuration through MCP, including artwork and AppSync Events; the owner reviews drafts and presses Publish.",
   "author": {
     "name": "SIA \"DryBits\"",
@@ -10,6 +10,11 @@
   },
   "homepage": "https://saasland.io/developers",
   "repository": "https://github.com/karlis-balcers/saasland-claude-plugin",
+  "license": "MIT",
+  "privacyPolicyUrl": "https://saasland.io/privacy",
+  "termsOfServiceUrl": "https://saasland.io/terms",
+  "documentationUrl": "https://saasland.io/developers",
+  "supportUrl": "https://saasland.io/about",
   "keywords": [
     "saasland",
     "apps",
