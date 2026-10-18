@@ -163,3 +163,7 @@ Publication and making an app private are portal-only. MCP has no publication to
 - Access is limited to owned apps and approved scopes. MCP does not grant AWS administration, wallet operations, secret retrieval, tester management, account impersonation or another creator's data. Do not route around denied scopes or account/hosting gates.
 
 Users can inspect and revoke connections in [Your apps → MCP connections](https://saasland.io/?view=mcp). Connections last up to 90 days. Revocation blocks later requests and refreshes; accepted deployments may finish. Browser sign-out does not revoke MCP access.
+
+## Public display identity
+
+Use `saasland.me().user.username` for a display name without permission. Discourage separate app username signup; users already choose and can rename their platform username. Key points, posts, data and authorization by the stable app-scoped `user.id`, never the username. Private profile fields still require consent. See [the development identity contract](../saasland-app-development/SKILL.md#user-identities).

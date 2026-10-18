@@ -1,6 +1,6 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.1.2** synchronizes the OpenAI and Claude skills with the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`), including app-to-user messages and purchase notifications. Apps built on the older SDK need a source update and redeploy.
+Version **3.2.0** synchronizes the OpenAI and Claude skills with the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`), including app-to-user messages and purchase notifications. Apps built on the older SDK need a source update and redeploy.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
@@ -82,3 +82,7 @@ saasland.io asks you to approve the connection and pick its permissions (`apps:r
 contact@saasland.io - https://saasland.io/about
 
 Published by SIA "DryBits", Latvia.
+
+## Public usernames
+
+Use `saasland.me().user.username` for display in games, forums and leaderboards without a permission prompt. Avoid separate app username registration. Users can change their username anytime; always key points, posts, ownership and access by the stable app-scoped `user.id`. Real name, email and other private profile fields still require permission. This package accompanies the platform 3.2.0 public-username release.

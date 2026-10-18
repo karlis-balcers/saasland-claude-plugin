@@ -18,15 +18,15 @@ For new apps and examples, use the simplest supported SDK call from the user's f
 
 Do not add a permission preflight, custom consent screen, grant-ID storage or a separate “Request permissions” button to a starter app. `profile.request`, `profile.requestAge18`, `wallet.requestCheck`, `wallet.requestRecurring` and `permissions.request` are advanced options for an intentional review-in-advance flow or an existing explicit-grant integration. They are not prerequisites for resource calls. One-time paid actions still use `wallet.authorize` followed by completion advice, and prepaid plans use `wallet.subscribe`; these calls include their own required consent.
 
-Profile and wallet permissions need no developer declaration in app configuration. Supported scopes are requested at runtime and only the user can approve them. MCP OAuth grants permission to manage apps; it never grants a hosted app access to an end user's profile or wallet.
+Private profile and wallet permissions need no developer declaration in app configuration. Supported scopes are requested at runtime and only the user can approve them. Public username is already available through `me()`. MCP OAuth grants permission to manage apps; it never grants a hosted app access to an end user's private profile or wallet.
 
 These SDK calls require an authenticated app page. For a public landing page, follow [Sign-in and public paths](#sign-in-and-public-paths): make its complete asset dependency tree public and render it without importing the protected SDK. A public `/` does not make `/styles.css`, `/app.js` or `/assets/*` public.
 
 ## Find the right workflow
 
 - [Getting started and quick start](https://saasland.io/developers#quick-start): a complete minimal HTTP project and deployment steps.
-- [User identities](https://saasland.io/developers#identity): private account IDs, stable app-scoped subjects and permission-protected usernames.
-- [Permissions and profile](https://saasland.io/developers#permissions): username-only requests, partial approval, expiry and revocation.
+- [User identities](https://saasland.io/developers#identity): private account IDs, stable app-scoped subjects and public, editable usernames.
+- [Permissions and profile](https://saasland.io/developers#permissions): private-field requests, partial approval, expiry and revocation.
 - [Payments](https://saasland.io/developers#wallet-contract), [subscriptions](https://saasland.io/developers#subscriptions) and [usage permissions](https://saasland.io/developers#recurring-payments): choose the right payment lifecycle.
 - [Live messaging](https://saasland.io/developers#realtime-contract), [online friends](https://saasland.io/developers#presence), [files and data](https://saasland.io/developers#storage-contract), [preferences](https://saasland.io/developers#appearance-contract), [navigation](https://saasland.io/developers#navigation) and [HTTPS APIs](https://saasland.io/developers#connections).
 - [Configuration and secrets](https://saasland.io/developers#manifest), [private testing and publication](https://saasland.io/developers#publication), [support and refunds](https://saasland.io/developers#operations).
@@ -275,9 +275,9 @@ There are three distinct identities:
 | --- | --- |
 | Platform account ID, shown in Profile & settings | Private to platform services. Used by the creator portal to invite testers; never returned to hosted apps. |
 | App user ID, `usr_…` | Stable within one app/account pair, different in other apps. Use it as the durable user key and verify server requests through `X-Saasland-User-ID`. |
-| Platform username, such as `bright-otter-42` | Editable display handle, disclosed only through an explicit `username` profile grant. Never use as a database ownership key. |
+| Platform username, such as `bright-otter-42` | Public, editable display handle included in `saasland.me().user.username` without permission. Never use for ownership, points, roles or stored-data keys. |
 
-`saasland.me()` returns `{ platformOrigin, user: { id }, app, preferences, csrfToken }`. Username, name, email, gender, birthday and avatar are absent. The global account ID remains private even after profile approval and even when the user owns the app. The username is permission-protected because it is shared across apps and may be identifying. A profile grant does not change the app user ID. The CSRF token is a session request token, not an identity; do not log or send it to providers. The app ID stays stable when its public hostname changes; use returned addresses or browser origin rather than constructing a hostname from it.
+`saasland.me()` returns `{ platformOrigin, user: { id, username }, app, preferences, csrfToken }`. Username is public to apps the user visits; it is `null` until chosen. Name, email, gender, birthday and avatar are absent. The global account ID remains private even after profile approval and even when the user owns the app. Use the platform username for games, forums, leaderboards and other display names; do not ask users to create another username in your app. Users can change it anytime. Refresh `me()` to obtain the current name, and update display metadata by `user.id`; a rename must never move or reset points, posts, memberships or data. Do not use usernames for login, authorization or identity matching; an old name can be claimed by someone else. Render with `textContent`. The shared public username can link activity across apps; do not promise anonymity. A profile grant does not change the app user ID. The CSRF token is a session request token, not an identity; do not log or send it to providers. The app ID stays stable when its public hostname changes; use returned addresses or browser origin rather than constructing a hostname from it.
 
 HTTP request bodies may be at most 1 MiB, decoded responses at most 4 MiB. App/account requests cap at 60 per minute, with 600 per minute shared across an app and at most four active invocations per creator across all apps. Handle 429 responses without losing user input. Redirects stay within the app origin and cannot target reserved auth or SDK routes. Service workers, arbitrary embedded frames and objects are unsupported; public pages have the controlled YouTube exception below. Serve scripts from your app origin and use the browser SDK for platform services.
 
@@ -287,7 +287,7 @@ For an admin allowlist, ask the owner to open the app while signed in, then open
 
 Protected fetch/API requests return HTTP 401 JSON with code/error `session_expired`, a platform-generated `signInUrl` and `X-Saasland-Session: expired`. Document visits still redirect to sign-in. Do not treat arbitrary HTML, redirects, 401s from your own services, offline failures, 403s or 5xx errors as proof of platform sign-out. For raw fetch, require status 401 plus this platform header, or verify with `saasland.session.check()`. The SDK does not replace global fetch/XHR.
 
-`saasland.session.check()` resolves `{ authenticated: true, user: { id } }` or `{ authenticated: false, code: 'session_expired', signInUrl }`; unknown/network/permission errors reject. `saasland.session.onExpired(callback)` and `saasland.session.onRestored(callback)` return unsubscribe functions. While subscribed, checks run on focus, visibility, pageshow and reconnect, coalescing concurrent requests and skipping hidden/offline pages. SDK operations including `saasland.store` throw `error.code === 'session_expired'` with status 401 and signInUrl, once per failed operation; the expiry callback fires once until recovery.
+`saasland.session.check()` resolves `{ authenticated: true, user: { id, username } }` or `{ authenticated: false, code: 'session_expired', signInUrl }`; unknown/network/permission errors reject. `saasland.session.onExpired(callback)` and `saasland.session.onRestored(callback)` return unsubscribe functions. While subscribed, checks run on focus, visibility, pageshow and reconnect, coalescing concurrent requests and skipping hidden/offline pages. SDK operations including `saasland.store` throw `error.code === 'session_expired'` with status 401 and signInUrl, once per failed operation; the expiry callback fires once until recovery.
 
 Keep editors/game state mounted, pause protected actions, retain failed inputs, and offer a clear sign-in action. Call `await saasland.signIn({ returnTo: location.pathname + location.search + location.hash })` from that action after preserving draft state. It uses a trusted separate sign-in window, preserves the original app document and resolves only after verifying the same app user. The shell supplies a visible retry if popup opening is blocked. Return paths must be app-relative and cannot target auth/SDK routes. The helper does not redirect the original page or replay operations. Cancellation/timeout reject with `session_sign_in_cancelled` / `session_sign_in_timeout`; a different app user produces `session_user_changed` on identity checks. Require an explicit reload to switch account, keeping the previous user's draft separate.
 
@@ -355,17 +355,17 @@ This example deliberately uses base-language translations (en-GB matches en). Ap
 
 ## Permissions and profile access
 
-Request only the profile fields the selected feature needs. Sign-in, tester invitation, payment and app ownership do not grant profile access. If the app only needs a display handle, request `username` alone; it does not need name, email or gender.
+Use public identity for display without a permission request:
 
 ```js
-// Run from a user click in the saasland.io app shell.
-const { profile } = await saasland.profile.read({
-  fields: ['username'], purpose: 'Display your username beside saved notes',
-});
-if (profile.username) {
-  // Render profile.username with textContent, not untrusted HTML.
-}
+const { user } = await saasland.me();
+document.querySelector('#player-name').textContent = user.username ?? 'Player';
+// Key scores, posts and saved data by user.id, never by user.username.
 ```
+
+Only request private fields the selected feature needs. Sign-in, tester invitation, payment and app ownership do not grant access to name, email, gender, birthday or derived age. For example, use `saasland.profile.read({ fields: ['email'], purpose: 'Send the report you requested' })` when email is needed. Prefer platform Messages for app notifications.
+
+Existing `profile.read({ fields: ['username'] })` calls remain supported without consent. Mixed requests review only private fields; username is not a revocable grant. Old username-only grants no longer appear in Permissions. New apps should use `me().user.username`.
 
 Separate permission requests are optional. `profile.read` without a grant ID checks current access and opens the trusted review only if permission is missing. After partial approval it reads only the approved fields. Catch request/read failures and offer a useful fallback. With the optional `profile.request` helper, `approval.terms.fields` is the approved subset; pass only that subset to an explicit grant read. Unsupported, unavailable, unselected, expired or revoked fields are not disclosed. Partial approval must not unlock a feature that needs a missing required field. Profile grants do not allow access to the private platform ID, avatar or provider credentials. See the shared permission lifecycle and SDK calls below.
 
@@ -373,7 +373,7 @@ Separate permission requests are optional. `profile.read` without a grant ID che
 
 Credits are integer customer usage units. For one-time paid features, saasland.io holds the approved credits and consumes them after the app advises completion. Qualifying delivered usage is recorded for separately assessed EUR supplier compensation under the agreed policy; purchased credits never become developer money and no credit-to-payout exchange rate is promised. Self, related-party and test usage cannot generate payable earnings. Apps cannot mint credits, reward users, select arbitrary recipients or cash credits out. Only the platform handles verified purchase funding and original-transaction corrections. The old `/v1/balance` and `/v1/debits` integrations are retired. Never request platform billing keys.
 
-Before deploying, provide the actual developer's legal name/type, country, business or service address, company registration where applicable, and public HTTPS terms, privacy and refund-policy links. Users contact you through Feedback in the saasland.io menu; read and reply under App feedback. The deployment form does not ask for a support email or support website. Include any legally required trader contact information in your public policies and offers. These are public disclosures, not verification of the developer or policies. Profile fields and wallet operations request user approval at runtime, without a configuration declaration. The developer is responsible for accurate prices, authorized charges, delivery, support and valid app-related refund claims under the developer terms. The permission screen links to Feedback for that app. Users can also contact saasland.io for platform or unresolved issues. Mandatory consumer rights remain intact.
+Before deploying, provide the actual developer's legal name/type, country, business or service address, company registration where applicable, and public HTTPS terms, privacy and refund-policy links. Users contact you through Feedback in the saasland.io menu; read and reply under App feedback. The deployment form does not ask for a support email or support website. Include any legally required trader contact information in your public policies and offers. These are public disclosures, not verification of the developer or policies. Private profile fields and wallet operations request user approval at runtime, without a configuration declaration. The developer is responsible for accurate prices, authorized charges, delivery, support and valid app-related refund claims under the developer terms. The permission screen links to Feedback for that app. Users can also contact saasland.io for platform or unresolved issues. Mandatory consumer rights remain intact.
 
 Permission review rules:
 
@@ -385,7 +385,7 @@ Permission review rules:
 
 Recommended browser calls (consent is handled automatically):
 
-- `saasland.profile.read({fields,purpose?,expiresAt?})` returns `{profile}` containing only requested, granted fields. Request only the needed `username`, `name`, `email`, `gender`, `birthday`, derived `age18` or `age` fields. Users select fields individually; check for missing required fields. Revocation stops future platform disclosure, not copies already received.
+- `saasland.profile.read({fields,purpose?,expiresAt?})` returns `{profile}` containing the requested public username and approved private fields. Request only the needed `name`, `email`, `gender`, `birthday`, derived `age18` or `age` fields. Users select fields individually; check for missing required fields. Revocation stops future platform disclosure, not copies already received.
 - `saasland.profile.checkAge18({purpose?,expiresAt?})` returns `{is18OrOver:true|false|null}` without disclosing birthday. It uses the saved, self-declared birthday; it is not verified proof of age.
 - `saasland.wallet.check({credits,comparison,purpose?,expiresAt?})` returns only `{matches}` for the exact threshold and comparator (`lt`, `lte`, `gt`, `gte`). A different threshold needs fresh consent. This check does not reserve funds; a payment flow does not need a balance preflight.
 - `saasland.wallet.authorize({credits,idempotencyKey,productName?,description?,purpose,supplyType?})` reviews a new payment, holds the approved credits and returns a payment ID. The default supply type is `service`; use `digital_content` only for accurately classified one-time digital content. The platform requires separate unchecked immediate-performance and withdrawal-rule confirmations; an app cannot approve them for the customer. Retrying an authorized or completed payment returns its existing result without a dialog. Holds expire 24 hours after approval.
@@ -508,7 +508,7 @@ Every app you build includes its own privacy notice page at `/public/privacy`, w
 Write it from what the code actually does, in plain language, and update it whenever processing changes:
 
 - who provides the app: the developer named in Business & tax, supplying it through saasland.io, whose operator SIA "DryBits" sells paid services and runs the platform; link the platform notice at `https://saasland.io/privacy` for sign-in, wallet, payments and cookies handled by saasland.io
-- what the app stores and why: its saasland.io pseudonymous user ID, app data the user creates, any profile fields it requests (only after the user allows them), and how long each is kept
+- what the app stores and why: its saasland.io pseudonymous user ID, app data the user creates, the public username used for display, any private profile fields it requests (only after the user allows them), and how long each is kept
 - every outside service the app's firewall rules let it call (for example an AI or email provider), what is sent and why
 - the app's cookies and browser storage, matching the declaration, and that optional storage waits for the user's choice
 - how users ask questions or exercise their rights: Feedback in the saasland.io menu
