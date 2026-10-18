@@ -1,6 +1,6 @@
 ---
 name: saasland-app-development
-description: Create ordinary HTTP SaaS apps for saasland.io ZIP or folder deployment, using the supported runtime and browser SDK.
+description: Create HTTP SaaS apps for saasland.io using its runtime, browser SDK and app-to-user messaging. Explain platform purchase receipts and notification behavior.
 ---
 
 ## SaaSland contract version 3
@@ -10,7 +10,7 @@ Use `import { saasland } from "/_saasland/sdk.js"` and `X-Saasland-*` trusted he
 
 # Build an app for saasland.io
 
-Contract revision: 2026-10-14. Read the public [developer documentation](https://saasland.io/developers) without signing in. Check current MCP tool schemas and portal feature availability. Do not claim deployment until get_app_status or the portal reports Ready.
+Contract revision: 2026-10-18. Read the public [developer documentation](https://saasland.io/developers) without signing in. Check current MCP tool schemas and portal feature availability. Do not claim deployment until get_app_status or the portal reports Ready.
 
 ## Default approach: call the resource directly
 
@@ -28,7 +28,7 @@ These SDK calls require an authenticated app page. For a public landing page, fo
 - [User identities](https://saasland.io/developers#identity): private account IDs, stable app-scoped subjects and permission-protected usernames.
 - [Permissions and profile](https://saasland.io/developers#permissions): username-only requests, partial approval, expiry and revocation.
 - [Payments](https://saasland.io/developers#wallet-contract), [subscriptions](https://saasland.io/developers#subscriptions) and [usage permissions](https://saasland.io/developers#recurring-payments): choose the right payment lifecycle.
-- [Files and data](https://saasland.io/developers#storage-contract), [preferences](https://saasland.io/developers#appearance-contract), [navigation](https://saasland.io/developers#navigation) and [HTTPS APIs](https://saasland.io/developers#connections).
+- [Live messaging](https://saasland.io/developers#realtime-contract), [online friends](https://saasland.io/developers#presence), [files and data](https://saasland.io/developers#storage-contract), [preferences](https://saasland.io/developers#appearance-contract), [navigation](https://saasland.io/developers#navigation) and [HTTPS APIs](https://saasland.io/developers#connections).
 - [Configuration and secrets](https://saasland.io/developers#manifest), [private testing and publication](https://saasland.io/developers#publication), [support and refunds](https://saasland.io/developers#operations).
 - [SDK reference](https://saasland.io/developers#sdk-reference), [troubleshooting](https://saasland.io/developers#troubleshooting) and [capabilities and limits](https://saasland.io/developers#available-today).
 
@@ -50,6 +50,19 @@ Import `{ saasland }` from `/_saasland/sdk.js` on authenticated pages only. Ever
 | Language and appearance | `preferences.get`, `preferences.subscribe` |
 | Platform menu | `navigation.register` |
 | Visitor cookie choices | `storageConsent.get`, `storageConsent.subscribe` |
+
+SDK failures reject with an Error carrying `status` and, when known, `code`:
+
+| `error.code` | Status | Meaning |
+| --- | --- | --- |
+| `permission_denied` | 403 | User denied. Explain the limited feature; a later user action may ask again. Never loop. |
+| `permission_unavailable` | 403 | Review expired or no longer available. |
+| `session_expired` | 401 | Signed out; carries `signInUrl`. See [Session expiry](#session-expiry-and-unfinished-work). |
+| `session_user_changed` | 409 | A different account signed in; keep drafts separate. |
+| `session_shell_required` | - | Open the app inside saasland.io. |
+| `session_sign_in_cancelled`, `session_sign_in_timeout` | - | Sign-in window closed or timed out; the page is intact. |
+| `age_restricted`, `birthday_required` | 403 | A recurring charge failed its `minimumAge`. |
+| `invalid_response` | varies | Unexpected platform response; retry safe reads later. |
 
 Developers manage apps through the saasland.io MCP tools (`list_apps`, `create_app`, `create_source_upload`, `deploy_source`, `redeploy_app`, environment, firewall, database and browser-storage tools, deployments, activity and logs) or the portal. Publication is portal-only.
 
@@ -167,11 +180,52 @@ Keep authoritative state in your database or platform storage. Live events have 
 
 On authenticated game/lobby pages, call `const presence = saasland.presence.start({ onError })` once to track this page while visible and connected. Query `const { users } = await saasland.presence.get(friendIds)` for up to 50 known app-scoped `usr_…` IDs; results are `{ userId, online }`. Your app owns friendship, nicknames and the friend list. No platform-wide activity, account IDs, user directory or last-seen times are disclosed. Same-app callers who know an ID can query it; presence is not friend-only authorization.
 
-The SDK sends a heartbeat every 30 seconds while visible. Hidden pages pause and send a best-effort offline update; returning resumes. Multiple tabs/devices are independent; one visible tab keeps the user online. Lost connections expire within 90 seconds. `await presence.stop()` disables this page's tracking and removes listeners/timers. SDK import and presence queries alone do not start tracking. Client IDs live only in memory; this feature adds no localStorage or cookie declaration.
+Heartbeats run every 30 seconds while visible; hidden pages pause with a best-effort offline update, and lost connections expire within 90 seconds. One visible tab or device keeps the user online. `await presence.stop()` ends tracking and removes listeners/timers; importing the SDK or querying does not start it. Client IDs live only in memory, so no browser-storage declaration is needed.
 
-Poll known friends about every 30 seconds while visible, handle rejected requests as status unavailable, and clear stale online indicators after failures. Unknown, inaccessible, expired and other-app IDs return offline without confirming an account exists. Do not use presence to authorize moves, payments or multiplayer actions: it is approximate page activity, not proof a person is available. Explain presence to users and offer stop tracking when they disable the feature. Profile fields retain their separate permission requirements.
+Poll known friends about every 30 seconds while visible. Unknown, inaccessible, expired and other-app IDs return offline; treat rejected requests as status unavailable, not offline. Presence is approximate page activity: never use it to authorize moves, payments or multiplayer actions. Explain it to users and stop tracking when they disable the feature.
 
 Limits: 50 queried IDs, 4 KiB JSON, 20 presence requests per app/user/minute, 32 recent tab leases. Normal gateway limits also apply. Browser SDK calls use protected `POST /_saasland/presence/query` (`{ userIds }`) and `/heartbeat` (`{ clientId, sequence, online }`) with same-origin sessions and CSRF; do not call from public anonymous pages or invent server credentials.
+
+## Messages to users (no email)
+
+Use the platform's **Messages** inbox for an app's completion notices, replies or order updates. Messages appears in the portal and running-app menu with an unread badge. Users can read, mark read, download or print a message and mute an app; **Feedback** remains the two-way support channel. App messages do not send email or browser/mobile push notifications. Never request an email address just to notify an app user.
+
+Send from the app's server to `POST https://saasland.io/api/app-messages`, using `Authorization: Bearer ${SAASLAND_APP_TOKEN}` and JSON `{ to, title, body, path?, dedupeKey? }`. `to` is that app's scoped `usr_…` ID from the trusted `X-Saasland-User-ID` header, not a platform account ID or another app's user ID. This is a runtime HTTP API, not a browser SDK method or MCP tool.
+
+The platform injects `SAASLAND_APP_TOKEN` into source-deployed runtimes. It is usable only by the current live runtime after publication. The outgoing firewall already allows `saasland.io`; do not add a rule or create, retrieve or override this reserved environment variable through MCP. Keep the token server-side and out of responses, browser bundles and logs. Each Publish rotates it; the owner can **Revoke key** in Configuration → Environment variables, then Publish again for a new key.
+
+```js
+// Server code only.
+const response = await fetch('https://saasland.io/api/app-messages', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${process.env.SAASLAND_APP_TOKEN}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ to: userId, title: 'Your export is ready', body: 'Open the app to download it.', path: '/exports/42', dedupeKey: 'export-42' }),
+  signal: AbortSignal.timeout(10000),
+});
+if (!response.ok) throw new Error(`Message request failed (${response.status})`);
+// A 202 response means accepted, not delivered or read; muted apps receive it too.
+```
+
+Plain text only: title 1–120 characters on one line, body 1–2,000; total request at most 8 KiB. `path` is an optional same-app path shown as **Open in app** while the app is available; do not put HTML or external links in the message. Supply a stable `dedupeKey` (1–128 visible ASCII) for each logical notification and reuse it on bounded retries, including after an uncertain network response. Success is `202 {"status":"accepted","duplicate":false}`; a user who muted the app gets the same reply and the message is dropped. Accepted does not prove delivery or reading. Unknown, other-app or blocked recipients return 404; invalid keys return 401 and unavailable apps 403. Limits are 5 per person per app per day, 1,000 per app per day and 60 per minute (429). Handle sending separately from completed business work; notification failure must not repeat a payment or completed action.
+
+## Credit-spending receipts and notifications
+
+saasland.io creates platform receipts automatically. Apps should provide accurate `productName`, purpose and payment terms, then use the wallet/payment APIs to determine financial state. Do not send a second app message as a substitute for a platform receipt or use a receipt notification as proof of delivery of the paid service.
+
+| Event | What appears in Messages |
+| --- | --- |
+| One-time payment approved | **Payment approved** receipt with the amount and recorded terms. Credits are held until the app completes the payment; approval is not completion. The notification is issued at approval, not again for every advice/completion call. |
+| Prepaid subscription started | **Subscription started** receipt for the first paid period. |
+| Subscription renewal charges a new period | **Subscription renewed** receipt for that period. |
+| Recurring usage permission approved | **Charges allowed** confirmation with the per-charge and period limits. Individual subsequent usage charges do not each create a Messages receipt or email alert; their financial history remains in Wallet. |
+| Credits purchased in Wallet | Top-up receipt after the credits are added. This is buying credits, separate from spending them in an app. |
+| Top-up withdrawal submitted | Withdrawal acknowledgement; it is not proof that the payment-method refund has completed. |
+
+The receipt identifies the app/product, credit amount or allowance, relevant dates and recorded terms, with a Wallet link for applicable withdrawal/problem actions. Users read the full receipt in **Messages** and can download or print it. Platform receipts cannot be muted by muting an app.
+
+For a platform receipt or withdrawal acknowledgement, saasland.io also attempts one short transactional email alert to the user's verified account email, from `saasland.io <contact@saasland.io>`. It says a new receipt or withdrawal acknowledgement is in Messages and links directly to it; amounts and purchase details stay in the inbox. There is no marketing or open/click tracking. App messages and ordinary platform notices never trigger these emails, and apps cannot request an email alert or access the recipient's address through this feature.
+
+Do not promise that every credit debit produces an email or that delivery is guaranteed. App-payment receipts and renewal notifications are best effort after the financial commit; a notification failure does not undo the payment. The inbox message is stored before the email attempt, so email failure does not remove it. Never retry a successful charge merely because a notification is missing; inspect Wallet/payment state instead.
 
 ## Sign-in and public paths
 
@@ -198,11 +252,22 @@ For existing apps, either move public dependencies under an already allowed subt
 
 Before handoff, check the source's public-page dependency URLs against the intended access list. Once the owner publishes, verify in a fresh signed-out browser with an empty cache: the page is styled, images render, public interactions work, and every required resource returns the intended body and content type without an authentication redirect. Check the Network panel for redirect chains and login HTML returned as a final 200. Confirm protected pages and SDK services still require sign-in. A private owner/tester preview, localhost run, or Ready status does not verify anonymous production access; report that check as pending until it has actually run.
 
-Public pages run directly at the app URL. Anonymous requests have `X-Saasland-Authenticated: false` and no `X-Saasland-User-ID`, cookies, profile or payment authority. With a valid authorized app session, the header is `true` and scoped identity is supplied. Treat missing identity as anonymous; never substitute a shared user ID. App/account/platform services under `/_saasland/` and authentication routes stay protected even with `/*`. Avoid loading the protected SDK on anonymous pages. Link to a protected app path to start sign-in; the destination path and query are preserved. Public mutation routes still require the existing same-origin request rules and do not enable external webhooks. Check the portal for feature availability; configured exceptions never make an unpublished app public.
+Public pages run directly at the app URL. Anonymous requests have `X-Saasland-Authenticated: false` and no user ID, cookies, profile or payment authority; never substitute a shared user ID. `/_saasland/` services and authentication routes stay protected even with `/*`, and configured exceptions never make an unpublished app public. Link to a protected app path to start sign-in (path and query are preserved). Public mutation routes keep same-origin rules and do not enable external webhooks.
 
 ## User identities
 
-saasland.io manages sign-in and app sessions. Use verified `X-Saasland-User-ID`, `X-Saasland-App-ID`, `X-Saasland-Request-ID` and `X-Saasland-Theme` runtime headers, never client-provided identity parameters. User IDs are stable opaque subjects unique to each app/account pair and match `saasland.me().user.id`. They survive sign-in and profile changes. Existing custom databases keyed by the older global ID need an operator-reviewed migration; built-in datastore contents remain accessible.
+saasland.io manages sign-in and app sessions. The gateway strips browser-supplied `X-Saasland-*` headers and sets trusted ones; never use client-provided identity parameters.
+
+| Header | Value |
+| --- | --- |
+| `X-Saasland-Authenticated` | `true` with a signed-in user, `false` on anonymous public pages |
+| `X-Saasland-User-ID` | App-scoped `usr_…`; absent when anonymous |
+| `X-Saasland-App-ID`, `X-Saasland-Request-ID` | Stable app identifier; per-request ID |
+| `X-Saasland-Theme`, `X-Saasland-Primary-Language`, `X-Saasland-Secondary-Language` | Saved preferences; languages only when set |
+| `X-Saasland-Payment-ID/-Credits/-Key/-Status/-Expires-At` | Verified one-time payment, when the request sends `X-Saasland-Payment-ID` |
+| `X-Saasland-Charge-ID/-Credits/-Key` | Verified usage charge, when the request sends `X-Saasland-Charge-ID` |
+| `X-Saasland-Subscription-ID/-Active/-Credits/-Period/-Cancellation-Policy` | Verified active subscription, when the request sends `X-Saasland-Subscription-ID` |
+ User IDs are stable opaque subjects unique to each app/account pair and match `saasland.me().user.id`. They survive sign-in and profile changes. Existing custom databases keyed by the older global ID need an operator-reviewed migration; built-in datastore contents remain accessible.
 
 There are three distinct identities:
 
@@ -310,7 +375,13 @@ Credits are integer customer usage units. For one-time paid features, saasland.i
 
 Before deploying, provide the actual developer's legal name/type, country, business or service address, company registration where applicable, and public HTTPS terms, privacy and refund-policy links. Users contact you through Feedback in the saasland.io menu; read and reply under App feedback. The deployment form does not ask for a support email or support website. Include any legally required trader contact information in your public policies and offers. These are public disclosures, not verification of the developer or policies. Profile fields and wallet operations request user approval at runtime, without a configuration declaration. The developer is responsible for accurate prices, authorized charges, delivery, support and valid app-related refund claims under the developer terms. The permission screen links to Feedback for that app. Users can also contact saasland.io for platform or unresolved issues. Mandatory consumer rights remain intact.
 
-Call the resource directly from the user’s feature action. The SDK checks server permissions first and opens the trusted saasland.io sheet only when approval is missing. Existing grants return immediately without a dialog or another permission record. Denial ends the current SDK call with `status: 403, code: "permission_denied"`; revocation stops future access. A later direct call opens fresh review for missing permissions, including previously denied or revoked fields. Users can also choose Allow in Permissions. Your app must explain which functionality needs the missing permission and provide a useful fallback; do not retry to pressure a new prompt. Keep the purpose consistent for the same use; a materially different purpose needs fresh approval. The sheet shows the purpose as a message from your app, shows every requested field, marks previously approved fields Already enabled, leaves new fields unselected, and closes after a confirmed decision. Older shells may use a separate review window. The app sandbox cannot open arbitrary windows. The platform shows the developer, purpose, scope, limits and expiry, and offers approval or denial. Never substitute an app-rendered dialog, a browser message, or a local balance for server approval. Closing, blocking or denying the review grants nothing. Users inspect and revoke access at `/?view=permissions`. New requests require the developer's current terms acknowledgement; this does not turn a review draft into an effective agreement.
+Permission review rules:
+
+- Call the resource directly from the user’s feature action. Existing grants return immediately; missing permission opens the trusted saasland.io sheet (older shells may use a separate review window). The app sandbox cannot open arbitrary windows.
+- The sheet shows the developer, your purpose (as a message from your app), every requested field or payment scope, limits and expiry. Previously approved fields show Already enabled; new fields start unselected.
+- Denial ends the call with `status: 403, code: "permission_denied"`; closing or blocking the review grants nothing; revocation stops future access. A later direct call may ask again, and users can choose Allow in Permissions (`/?view=permissions`). Explain the missing feature and offer a fallback; never retry to pressure a new prompt.
+- Keep the purpose consistent for the same use; a materially different purpose needs fresh approval.
+- Never substitute an app-rendered dialog, a browser message or a local balance for server approval. New requests require the developer's current terms acknowledgement; this does not turn a review draft into an effective agreement.
 
 Recommended browser calls (consent is handled automatically):
 
@@ -428,7 +499,7 @@ For reliable server-side advice, return `X-Saasland-Payment-Advice: <the verifie
 
 On definite action failure, call `wallet.release(payment.id)`. On an uncertain network response, inspect your saved operation and `wallet.payment` before deciding whether to retry advice or release; do not automatically release work that may have succeeded. Users can release outstanding holds in Permissions. Expiry releases credits automatically after 24 hours, with background processing on the next worker run and immediate enforcement on payment/permission/wallet reads. Advice, release and expiry compete atomically; only one final result wins. No partial capture or direct bank transfer occurs through these SDK methods.
 
-Completed advice creates a receipt under the payment ID. Existing trusted `X-Saasland-Charge-ID/Credits/Key` receipt checks remain available for completed payments and recurring charges. Recurring charges still return `{id,debited,app,chargedAt,grantId,replayed?}` and retain their approved period budgets. Apps have no mint or refund endpoint; refer completed-payment remedies through Feedback/platform support.
+Completed advice creates a receipt under the payment ID; trusted `X-Saasland-Charge-ID/Credits/Key` receipt checks also work for completed payments and recurring charges. Recurring charges return `{id,debited,app,chargedAt,grantId,replayed?}`. Apps have no mint or refund endpoint; refer completed-payment remedies through Feedback/platform support.
 
 ## App privacy notice
 
@@ -469,8 +540,7 @@ TLS stays end to end, with streaming/binary content allowed within execution lim
 
 Check the editor's availability: saved rules do not activate infrastructure. Existing apps need one runtime update after the shared proxy is deployed; later rule edits need no restart. Users see allowed destinations in the app menu. This is not actual request history or a profile-sharing grant.
 
-Owners save runtime memory, timeout, port, health path, Files/Datastore and masked variables as a draft, then review all changes and press Publish. This reuses the deployed image and keeps the current version active until checks pass. Build instructions still require Upload new version.
-
+Runtime settings (memory, timeout, port, health path, Files/Datastore, variables) publish with the deployed image; build changes still need Upload new version.
 
 ### Product names, transaction history and refunds
 
@@ -494,11 +564,13 @@ saasland.io prohibits sexual content and all nudity, including nude pictures, se
 
 When building with the saasland.io plugin, inspect your generated source and libraries and register their storage through MCP. Call `get_app_browser_storage` for the current declaration, owner-preview discoveries, `policyVersion`, `revision` and `appVersion`; then `set_app_browser_storage` with those revision/version values and a complete reviewed `browserStorage` object (`version`, `confirmed:true`, `mode`, `entries`). Include every existing and detected supported key with its technology, category, purpose, provider, retention and necessity justification where applicable. Register known keys before source deployment and reconcile newly discovered keys as development continues. These are developer-management tools, not a browser SDK or app runtime API. Do not guess unknown purposes, mark optional uses necessary, or write redaction placeholders. Registration does not grant visitor consent, accept agreements or publish. After inventory registration, prepare the app cookie policy text using set_app_configuration.cookiePolicy for final Publish review. If the tools are unavailable, provide the inventory for the portal form and state that it has not been registered. The bundled saasland-apps skill describes the full workflow.
 
-When previewing as the app owner, saasland.io discovers supported storage names and types, including blocked attempts, without collecting values. In app Configuration, open **Cookies & browser storage → Review storage & cookie notice** to explain detected items. Purpose, provider, category and retention require your input; saved declarations generate the visitor notice. Publication is blocked by unexplained detected items. Open every feature and manually add anything discovery misses; previews are not exhaustive scans. Use fixed keys without personal data in names. New deployments start a new observed inventory. Changed declarations require visitors to review optional consent again. Server-set cookies remain unsupported and are flagged for source correction.
+Portal workflow and rules:
 
-Saving a storage declaration creates an unpublished draft. After Publish, the new declaration needs an app reload, not a rebuild. Rejected-name findings show the storage type and reason; bounded identifier names are displayed, while unsafe strings are omitted. Older reports may show Name unavailable: reload the owner preview, try the failing feature and reopen settings to refresh the details. Names must be 1–80 letters, digits, dots, colons, underscores or hyphens, starting with a letter or digit and without reserved platform prefixes (`__Host-`, `__Secure-`, `saasland`, `cognito`). Fix invalid names in source, deploy the corrected version and preview again; redeploying unchanged code does not fix them.
-
-Declare every cookie, localStorage and sessionStorage item in the portal's Cookies & browser storage form, including libraries: name, type, category, purpose, provider, retention (1 second to 180 days), and a strict necessity explanation when relevant. Choose No app browser storage explicitly when appropriate and reconfirm each uploaded version. Private MCP source-only drafts wait for portal review and Publish before building; missing declarations grant no browser storage and cannot be published. IndexedDB, Cache Storage, workers, third-party trackers and fingerprinting are unsupported. App-server Set-Cookie is always stripped. Cookie writes must be host-only with Path=/ and cannot use reserved platform names.
+- **Discover:** previewing as the owner records storage names and types (including blocked attempts), never values. Previews are not exhaustive: open every feature and add anything missed.
+- **Declare** in **Cookies & browser storage → Review storage & cookie notice**: every cookie, localStorage and sessionStorage item, including libraries, up to 20 items, with name, type, category, purpose, provider, retention (1 second to 180 days) and a strict necessity explanation when relevant. Or choose No app browser storage explicitly. Reconfirm for each uploaded version; new deployments start a new observed inventory. Unexplained items or missing declarations block publication and grant no storage.
+- **Names:** 1–80 letters, digits, dots, colons, underscores or hyphens, starting with a letter or digit, fixed and free of personal data, without reserved prefixes (`__Host-`, `__Secure-`, `saasland`, `cognito`). Fix rejected names in source and redeploy; redeploying unchanged code does not fix them. Older findings showing Name unavailable: reload the owner preview, try the feature and reopen settings.
+- **Mechanics:** cookie writes must be host-only with `Path=/`; app-server Set-Cookie is always stripped and flagged. IndexedDB, Cache Storage, workers, third-party trackers and fingerprinting are unsupported.
+- **Publish:** saving creates a draft. After Publish visitors reload (no rebuild); changed declarations require them to review optional consent again. Private MCP source-only drafts wait for portal review and Publish before building.
 
 Optional processing starts only when saasland.storageConsent.get().categories includes its category (preferences, analytics or marketing). Use saasland.storageConsent.subscribe(listener) to stop work on withdrawal; it returns an unsubscribe function. Check before loading optional code or sending data, not merely before a write. Reads/writes of undeclared or declined local/session keys throw or return no data; cookie writes are ignored. Catch storage failures and keep core features usable. Missing SDK/guard/consent means denied. The gateway manages namespaced local/session records with expiry; do not read their physical keys or bypass the controls. Browser guarding is defense in depth, not a substitute for compliant source code.
 
@@ -512,11 +584,11 @@ Do not start audible media automatically or from timers, scrolling, menu buttons
 
 For a public YouTube video use `<saasland-video video-id="M7lc1UVf-VE" title="Explain this video"></saasland-video>`. The helper displays **Load YouTube video**, then a player with autoplay disabled; the user chooses Play inside it. It uses `youtube-nocookie.com`, but this is not a storage/privacy exemption: disclose provider processing and obtain any required consent. Arbitrary frames remain blocked.
 
-Uploaded source is checked for playback patterns, and public candidate pages receive a bounded anonymous browser inspection. API presence alone is not a violation. Review/incomplete results require Admin assessment, and confirmed unsolicited playback requires corrected source. Public-path changes and new deployments need fresh evidence. Older healthy code stays active while a candidate waits for review. Use Feedback for help or a disputed finding. Checks do not certify audio/video content or age suitability. These controls are locally implemented; production availability depends on the coordinated release.
+Uploaded source is checked for playback patterns and public candidate pages get a bounded anonymous browser inspection; API presence alone is not a violation. Unclear results go to Admin review, and confirmed unsolicited playback needs corrected source. Older healthy code stays active while a candidate waits. Checks do not certify audio/video content or age suitability; use Feedback for help or disputes.
 
-Everyone can open public pages, so public pages, previews and artwork must contain no age-restricted images, video, animation or audio, even when the app's paid features or signed-in pages are age-limited. Put age-limited content behind sign-in or an age-limited payment. If an app issue needs attention, saasland.io Support Team sends a Feedback notice. Fix it and reply; a human review may lead to immediate blocking or additional time depending on severity. Internal checks never substitute for the developer’s responsibility for public content.
+Public pages, previews and artwork must contain no age-restricted images, video, animation or audio, even when paid features or signed-in pages are age-limited; put such content behind sign-in or an age-limited payment. If an issue needs attention, saasland.io Support Team sends a Feedback notice: fix it and reply. Depending on severity, review may block immediately or allow time to fix.
 
-Uploaded artwork uses the platform's background image checks. Those checks do not complete the content questionnaire or certify compliance. AI prepares truthful behavioral answers from the app and requirements; unknown facts need clarification, and the owner reviews the draft at Publish.
+Background artwork checks do not complete the content self-check or certify compliance.
 
 ## Shared company information
 

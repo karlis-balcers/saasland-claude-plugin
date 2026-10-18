@@ -1,6 +1,6 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.1.1** targets the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`). Apps built on the older SDK need a source update and redeploy.
+Version **3.1.2** synchronizes the OpenAI and Claude skills with the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`), including app-to-user messages and purchase notifications. Apps built on the older SDK need a source update and redeploy.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
@@ -46,6 +46,12 @@ Uploads are not counted per day; publishing that builds or restarts an app is li
 
 Read `get_app_configuration` for current/draft `realtimeEnabled` and the active `realtime` service status. Use `set_app_configuration({ slug, revision, changes: { realtimeEnabled: true } })` to prepare opt-in, or `false` to prepare removal. Both wait for your Publish review. After publishing, check that `realtime.enabled` is true and `realtime.status` is `ready`. Each app has an isolated service and attributed usage joins its daily hosting charges. The development skill covers the required backend channel-authorization callback and browser SDK.
 
+## Messages and credit-spending notifications
+
+Both clients include the same [messaging and receipt guidance](skills/saasland-app-development/SKILL.md#messages-to-users-no-email). App backends can send plain-text messages to their own users' **Messages** inbox using a platform-injected key and app-scoped user IDs, without collecting email addresses. Users see an unread badge and can open, download, print or mute app messages. These messages do not trigger email or push notifications; this runtime API is separate from the plugin's MCP tools.
+
+saasland.io automatically creates receipts for one-time payment approval, subscription start and charged renewals, and recurring usage allowance approval. Individual recurring usage charges do not each create a receipt notification. Top-ups and top-up withdrawal acknowledgements also appear in Messages. Platform receipts and withdrawal acknowledgements attempt a short email alert linking to the full inbox message; ordinary app messages and notices never email. Notification delivery is not guaranteed and does not determine payment success. The [full receipt contract](skills/saasland-app-development/SKILL.md#credit-spending-receipts-and-notifications) distinguishes approval, completion and Wallet history.
+
 ## Install in Claude (desktop, web and Cowork)
 
 Install **saasland.io** from **Customize → Plugins**. Installing does not sign you in: open the plugin's **Connectors** tab, click **Connect** on saasland and approve the connection on saasland.io. If Claude shows an "Add custom connector" dialog instead, keep the URL `https://saasland.io/mcp`, leave the OAuth Client ID and Client Secret fields empty, click **Add**, then **Connect**.
@@ -73,6 +79,6 @@ saasland.io asks you to approve the connection and pick its permissions (`apps:r
 
 ## Support
 
-contact@drybits.com - https://saasland.io/about
+contact@saasland.io - https://saasland.io/about
 
 Published by SIA "DryBits", Latvia.

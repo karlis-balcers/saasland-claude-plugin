@@ -14,6 +14,12 @@ Use the remote MCP server at `https://saasland.io/mcp` with saasland.io sign-in 
 
 When a saasland.io tool is available, call the tool needed for the user's request even if account linking has not happened yet. Public tool discovery does not mean the account is authorized. The server returns the client's OAuth linking signal when authorization is missing, expired, revoked or insufficient. Let the user complete the client-provided sign-in/consent flow, then retry; do not loop calls while waiting for consent. Developer Terms or hosting agreement errors require the user's portal action and are not solved by reconnecting.
 
+## App messages and purchase notifications
+
+When an app needs to notify its users, use the bundled [app-development messaging contract](../saasland-app-development/SKILL.md#messages-to-users-no-email). Its backend sends to `https://saasland.io/api/app-messages` with the platform-injected `SAASLAND_APP_TOKEN`, addressing its own app-scoped `usr_…` IDs. Do not ask for user email addresses, retrieve the reserved token, create an MCP messaging tool or change firewall rules for the platform host. Prepare the source and hand off publication as usual; actual sending belongs to the live app runtime.
+
+Explain the [receipt behavior](../saasland-app-development/SKILL.md#credit-spending-receipts-and-notifications) when preparing paid features: one-time approval, subscription start/charged renewal and recurring-allowance approval produce platform inbox receipts. Individual recurring usage charges do not each trigger a receipt alert. Platform receipts and top-up withdrawal acknowledgements also attempt a short email linking to Messages; app messages and ordinary notices never email. Do not duplicate platform receipts with app messages, promise email delivery or retry a successful payment because an alert is missing. Wallet/payment state remains authoritative.
+
 ## Tools at a glance
 
 | Job | Read first | Then write | Scope |

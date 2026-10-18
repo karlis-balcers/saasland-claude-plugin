@@ -2,7 +2,7 @@
   "name": "saasland",
   "owner": {
     "name": "SIA \"DryBits\"",
-    "email": "contact@drybits.com",
+    "email": "contact@saasland.io",
     "url": "https://saasland.io"
   },
   "description": "saasland.io plugins for Claude Code.",
@@ -12,7 +12,7 @@
       "displayName": "saasland.io",
       "source": "./",
       "description": "Prepare all saasland.io app setup and configuration through MCP, including artwork and AppSync Events; the owner reviews drafts and presses Publish.",
-      "version": "3.1.1",
+      "version": "3.1.2",
       "category": "development",
       "tags": [
         "saasland",
