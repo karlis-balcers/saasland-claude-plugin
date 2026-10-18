@@ -1,10 +1,10 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.2.0** synchronizes the OpenAI and Claude skills with the current saasland.io SDK and HTTP contract (`saasland`, `/_saasland/`, `X-Saasland-*`), including app-to-user messages and purchase notifications. Apps built on the older SDK need a source update and redeploy.
+Version **3.2.1** adds app preview guidance for features, pricing summaries, supported languages and optional public demos, and updates navigation to **Developer workspace**. Existing apps using the current saasland.io SDK need no source migration for this release.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
-- **saasland-apps** - list your apps, inspect status, deployments and logs, upload new source, create private app drafts, and prepare every app configuration section: details, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, optional AppSync Events, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
+- **saasland-apps** - list your apps, inspect status, deployments and logs, upload new source, create private app drafts, and prepare every app configuration section: details, app previews, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, optional AppSync Events, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
 - **saasland-app-development** - build ordinary HTTP SaaS apps that run on saasland.io with the browser SDK: sign-in, app storage and files, profile and age checks, credit payments and subscriptions, online presence, AppSync Events, languages, appearance and platform navigation.
 
 Every change is saved as a draft and waits for you to review it and press **Publish** in the saasland.io portal. The plugin cannot publish apps, accept agreements, read stored secret values, move credits or administer AWS.
@@ -14,7 +14,7 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 | Tool | Permission | What it does |
 | --- | --- | --- |
 | `get_app_configuration` | apps:read | Active and draft setup, AppSync Events service status, shared revision and artwork pointers |
-| `set_app_configuration` | apps:write | Draft details, policies, optional content self-check, access, categories, address, runtime and AppSync Events opt-in |
+| `set_app_configuration` | apps:write | Draft details, app previews, policies, optional content self-check, access, categories, address, runtime and AppSync Events opt-in |
 | `get_app_publication_review` | apps:read | Remaining blockers and saved changes for human Publish review |
 | `check_app_address` | apps:read | Check current address availability |
 | `get_app_artwork` | apps:read | Preview the owned draft or active artwork |
@@ -41,6 +41,12 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 | `set_app_browser_storage` | apps:write | Registers the app's cookie and browser-storage declaration |
 
 Uploads are not counted per day; publishing that builds or restarts an app is limited to 10 per developer per UTC day. Database usage joins the daily hosting charges with no separate approval.
+
+## App previews
+
+Use `get_app_configuration` to read the current revision and active/draft `listing`, then prepare factual features, pricing summaries and language tags with `set_app_configuration.changes.listing`. The object replaces the listing section, so preserve any existing fields you still need. The owner reviews and publishes the draft.
+
+For an optional demo, set `listing.demoPath` and make its route and dependencies public through `publicPaths`. A demo link does not grant anonymous access. Listing prices describe the app; actual paid actions still require platform payment approval. The [management skill](skills/saasland-apps/SKILL.md#prepare-all-app-configuration) lists the supported fields.
 
 ## AppSync Events
 
@@ -71,7 +77,7 @@ Install the `saasland` plugin from the plugin directory once it is listed, or ad
 
 ## Sign-in and privacy
 
-saasland.io asks you to approve the connection and pick its permissions (`apps:read`, `apps:logs`, `apps:write`). You need a saasland.io account with developer access. The plugin contains no API keys or credentials. Access uses OAuth 2.1 authorization code with PKCE and dynamic client registration. Tokens last up to 15 minutes and connections at most 90 days. Review or revoke connected clients in **Your apps → MCP connections** on saasland.io. Builds and deployments use your normal saasland.io hosting charges.
+saasland.io asks you to approve the connection and pick its permissions (`apps:read`, `apps:logs`, `apps:write`). You need a saasland.io account with developer access. The plugin contains no API keys or credentials. Access uses OAuth 2.1 authorization code with PKCE and dynamic client registration. Tokens last up to 15 minutes and connections at most 90 days. Review or revoke connected clients in **Developer workspace → MCP connections** on saasland.io. Builds and deployments use your normal saasland.io hosting charges.
 
 - Privacy policy: https://saasland.io/privacy
 - Terms: https://saasland.io/terms
