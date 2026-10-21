@@ -42,6 +42,10 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 
 Uploads are not counted per day; publishing that builds or restarts an app is limited to 10 per developer per UTC day. Database usage joins the daily hosting charges with no separate approval.
 
+## Static asset delivery
+
+Both client skills describe `changes.runtime.staticAssets`: map a directory in the final image (for example `/app/dist/assets`) to an intentionally public URL subtree (for example `/public/assets`), then upload source for the owner's Publish review. HTML and APIs stay dynamic; public-path rules never imply copying dynamic responses to a CDN. The skills also cover startup bundling, bounded safe-read retries, preserving input and the 60-second asset authorization lifetime.
+
 ## App previews
 
 Use `get_app_configuration` to read the current revision and active/draft `listing`, then prepare factual features, pricing summaries and language tags with `set_app_configuration.changes.listing`. The object replaces the listing section, so preserve any existing fields you still need. The owner reviews and publishes the draft.
