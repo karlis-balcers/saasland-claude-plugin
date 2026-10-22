@@ -12,7 +12,7 @@
       "displayName": "saasland.io",
       "source": "./",
       "description": "Prepare all saasland.io app setup and configuration through MCP, including artwork and AppSync Events; the owner reviews drafts and presses Publish.",
-      "version": "3.4.1",
+      "version": "4.0.1",
       "category": "development",
       "tags": [
         "saasland",
