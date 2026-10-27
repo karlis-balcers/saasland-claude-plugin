@@ -1,10 +1,10 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **3.2.1** adds app preview guidance for features, pricing summaries, supported languages and optional public demos, and updates navigation to **Developer workspace**. Existing apps using the current saasland.io SDK need no source migration for this release.
+Version **4.1.0** adds `get_app_vulnerabilities`: read the Amazon Inspector security issues of your running app and of your newest upload (an upload with a critical issue is not deployed), so your AI agent can update the affected packages. Version 4.0.1 lets players from well-known video platforms (YouTube, Vimeo, X and others) load in apps at once and autoplay when asked. Version 4.0.0 renamed the source tool to `deploy_source_for_review`. It saves source for human review in saasland.io; building and deployment start only when the owner reviews and presses **Publish**. Release the matching workspace server before distributing this package, then refresh client tool discovery and start a new session. The previous tool name is no longer supported.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
-- **saasland-apps** - list your apps, inspect status, deployments and logs, upload new source, create private app drafts, and prepare every app configuration section: details, app previews, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, optional AppSync Events, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
+- **saasland-apps** - list your apps, inspect status, deployments, logs and security issues, upload new source, create private app drafts, and prepare every app configuration section: details, app previews, ratings, policies, public paths, address, categories, runtime, artwork, write-only environment variables, database lifecycle, optional AppSync Events, firewall and browser-storage declarations. Read the publication checklist and hand off final review.
 - **saasland-app-development** - build ordinary HTTP SaaS apps that run on saasland.io with the browser SDK: sign-in, app storage and files, profile and age checks, credit payments and subscriptions, online presence, AppSync Events, languages, appearance and platform navigation.
 
 Every change is saved as a draft and waits for you to review it and press **Publish** in the saasland.io portal. The plugin cannot publish apps, accept agreements, read stored secret values, move credits or administer AWS.
@@ -24,6 +24,7 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 | `set_app_database` | apps:write | Prepare or cancel database setup, restore, rotation or deletion |
 | `list_apps` | apps:read | Lists your apps, including private drafts, with status |
 | `get_app_status` | apps:read | Shows one app's settings, status, setup/legal readiness and pending work |
+| `get_app_vulnerabilities` | apps:read | Amazon Inspector security issues with package and fixed version, for the running version and the newest upload |
 | `list_deployments` | apps:read | Recent builds and deployments with phases and errors |
 | `get_app_activity` | apps:read | A page of the app's activity history |
 | `get_app_environment` | apps:read | Environment variable names (draft and live), never values |
@@ -33,7 +34,7 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 | `get_app_logs` | apps:logs | Runtime or build logs, bounded pages with best-effort redaction |
 | `create_app` | apps:write | Reserves a new private app draft with technical settings |
 | `create_source_upload` | apps:write | Signed HTTP upload address for a source ZIP (up to 25 MiB) |
-| `deploy_source` | apps:write | Saves the uploaded ZIP as the next version for review |
+| `deploy_source_for_review` | apps:write | Saves the uploaded ZIP as the next version for review |
 | `redeploy_app` | apps:write | Prepares a redeploy of the current image with saved settings |
 | `set_app_environment` | apps:write | Adds, replaces or removes write-only environment values |
 | `set_app_firewall` | apps:write | Saves the draft list of outgoing HTTPS destinations |
