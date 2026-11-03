@@ -253,7 +253,6 @@ For new apps with public pages, serve their static files at URLs beneath `/publi
 
 ```html
 <link rel="stylesheet" href="/public/styles.css">
-<link rel="icon" href="/public/icon.svg" type="image/svg+xml">
 <script type="module" src="/public/landing.js"></script>
 <a href="/app">Sign in to use the app</a>
 ```
@@ -578,7 +577,9 @@ For apps with public pages, include the exact public-path requirements and the s
 
 ## App logo and promotional image
 
-The portal and MCP accept an optional logo and promotional image separately from your source ZIP or folder. For MCP use get_app_artwork to preview, create_artwork_upload → signed HTTP PUT → complete_artwork_upload to upload/replace, and remove_app_artwork to prepare removal. Read get_app_configuration for the latest revision before each image. Use JPEG/PNG files up to 2 MB and 4 megapixels each; square logos and 16:9 promotional images work best. Logos retain transparency. The whole image is fitted without cropping. Creators can preview, replace or remove artwork from app details. Published apps display it on the landing page; private artwork stays restricted. Omitting artwork on redeploy preserves it. Artwork is saved as a draft; the active images remain unchanged until the developer reviews and publishes. No manifest field or app SDK permission is required.
+The portal and MCP accept an optional logo and promotional image separately from your source ZIP or folder. For MCP use get_app_artwork to preview, create_artwork_upload → signed HTTP PUT → complete_artwork_upload to upload/replace, and remove_app_artwork to prepare removal. Read get_app_configuration for the latest revision before each image. Use JPEG/PNG files up to 2 MB and 4 megapixels each; square logos and 16:9 promotional images work best. Logos retain transparency. The whole image is fitted without cropping. Creators can preview, replace or remove artwork from app details. Published apps display it on the landing page; private artwork stays restricted. The published logo is also the browser tab icon (favicon) on every app page. Omitting artwork on redeploy preserves it. Artwork is saved as a draft; the active images remain unchanged until the developer reviews and publishes. No manifest field or app SDK permission is required.
+
+**Browser tab icon.** Apps run inside saasland.io frames, so a `<link rel="icon">` or `/favicon.ico` in your app never reaches the browser tab. saasland.io sets the tab icon itself: the published app logo, or the saasland.io icon when the app has no logo. To brand the tab, upload a simple square logo; a PNG with a transparent background reads best at tab size. Do not add favicon files or public paths for them.
 
 ## Marketplace categories
 
