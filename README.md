@@ -1,6 +1,6 @@
 # saasland.io plugin for Claude and OpenAI
 
-Version **4.1.0** adds `get_app_vulnerabilities`: read the Amazon Inspector security issues of your running app and of your newest upload (an upload with a critical issue is not deployed), so your AI agent can update the affected packages. Version 4.0.1 lets players from well-known video platforms (YouTube, Vimeo, X and others) load in apps at once and autoplay when asked. Version 4.0.0 renamed the source tool to `deploy_source_for_review`. It saves source for human review in saasland.io; building and deployment start only when the owner reviews and presses **Publish**. Release the matching workspace server before distributing this package, then refresh client tool discovery and start a new session. The previous tool name is no longer supported.
+Version **4.2.0** adds app source history: `get_app_source` downloads an app's latest (or an older) source ZIP so you can continue work locally after the saasland.io AI builder or another computer changed it, and `list_app_source_versions` shows every saved version with when, from where and its note. `deploy_source_for_review` takes an optional `note` and `baseVersion`; the latest save wins, with a warning when it replaced a newer version. Version 4.1.0 added `get_app_vulnerabilities`: read the Amazon Inspector security issues of your running app and of your newest upload (an upload with a critical issue is not deployed), so your AI agent can update the affected packages. Version 4.0.1 lets players from well-known video platforms (YouTube, Vimeo, X and others) load in apps at once and autoplay when asked. Version 4.0.0 renamed the source tool to `deploy_source_for_review`. It saves source for human review in saasland.io; building and deployment start only when the owner reviews and presses **Publish**. Release the matching workspace server before distributing this package, then refresh client tool discovery and start a new session. The previous tool name is no longer supported.
 
 Build, deploy and manage your [saasland.io](https://saasland.io) apps from Claude Code, Codex or ChatGPT. The same plugin connects your AI client to the saasland.io MCP server at `https://saasland.io/mcp` and adds two skills:
 
@@ -35,6 +35,8 @@ Every change is saved as a draft and waits for you to review it and press **Publ
 | `create_app` | apps:write | Reserves a new private app draft with technical settings |
 | `create_source_upload` | apps:write | Signed HTTP upload address for a source ZIP (up to 25 MiB) |
 | `deploy_source_for_review` | apps:write | Saves the uploaded ZIP as the next version for review |
+| `get_app_source` | apps:read | 15-minute download link for the latest (or an older) source ZIP |
+| `list_app_source_versions` | apps:read | Saved source versions, newest first, with time, origin, note and status |
 | `redeploy_app` | apps:write | Prepares a redeploy of the current image with saved settings |
 | `set_app_environment` | apps:write | Adds, replaces or removes write-only environment values |
 | `set_app_firewall` | apps:write | Saves the draft list of outgoing HTTPS destinations |
